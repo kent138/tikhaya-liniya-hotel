@@ -1,0 +1,5 @@
+import React from 'react';
+import {ArrowUpRight,Users,Maximize2} from 'lucide-react';
+import {Link} from '../App';
+import {money} from '../lib/data';
+export default function RoomCard({room,choose,disabled=false}){return <article className="room-card"><Link href={'/rooms/'+room.id} className="room-photo"><img src={room.image} alt={'Интерьер номера '+room.name} loading="lazy" width="1000" height="720"/><span className="photo-tag">{room.tag}</span><span className="photo-arrow"><ArrowUpRight/></span></Link><div className="room-title"><Link href={'/rooms/'+room.id}><h3>{room.name}</h3></Link><span><Maximize2 size={14}/> {room.area} м² <i/><Users size={14}/> до {room.guests}</span></div><p>{room.subtitle}</p><div className="room-bottom"><span>от <strong>{money(room.price)}</strong> <small>/ ночь</small></span>{choose?<button className="text-link" disabled={disabled} onClick={()=>choose(room)}>{disabled?'Нет мест':'Выбрать'} {!disabled&&<ArrowUpRight size={18}/>}</button>:<Link href={'/booking?room='+room.id} className="text-link">Забронировать <ArrowUpRight size={17}/></Link>}</div></article>;}

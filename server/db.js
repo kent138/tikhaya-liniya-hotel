@@ -1,0 +1,9 @@
+import postgres from 'postgres';
+let client;
+export function db(){if(!process.env.DATABASE_URL)throw Error('Database is not configured');return client||=postgres(process.env.DATABASE_URL,{ssl:'require',max:3,idle_timeout:20,connect_timeout:10,prepare:false});}
+export async function rateLimit(req,scope,limit=30){const ip=String(req.headers['x-forwarded-for']||req.socket?.remoteAddress||'unknown').split(',')[0].trim();const {createHash}=await import('node:crypto');const key=createHash('sha256').update(scope+ip).digest('hex');const bucket=Math.floor(Date.now()/60000);const [row]=await db()`insert into rate_limits (key,bucket,count) values (${key},${bucket},1) on conflict (key,bucket) do update set count=rate_limits.count+1 returning count`;return row.count<=limit;}
+export function sameOrigin(req){const origin=req.headers.origin;if(!origin)return true;try{return new URL(origin).host===req.headers.host;}catch{return false;}}
+export function json(res,status,body){res.setHeader('Cache-Control','no-store');res.status(status).json(body);}
+export function inputBody(req){if(Number(req.headers['content-length']||0)>10000)throw Error('Запрос слишком большой.');return typeof req.body==='string'?JSON.parse(req.body):req.body||{};}
+export async function audit(sql,text){await sql`insert into hotel_history (text) values (${text})`;}
+export async function inventory(sql,category,arrival,departure,locked=false){const q=sql||db();if(locked)await q`select id from hotel_units where category=${category} order by id for update`;return await q`select u.id from hotel_units u where u.category=${category} and u.status='Свободен' and not exists(select 1 from hotel_bookings b where b.unit=u.id and b.status<>'Отменено' and b.arrival<${departure}::date and b.departure>${arrival}::date) and not exists(select 1 from hotel_blocks x where x.unit=u.id and x.date_from<${departure}::date and x.date_to>${arrival}::date) order by u.id`;}

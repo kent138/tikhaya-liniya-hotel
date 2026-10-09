@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS hotel_prices(category text PRIMARY KEY,price integer NOT NULL CHECK(price BETWEEN 100 AND 1000000));
+CREATE TABLE IF NOT EXISTS hotel_units(id text PRIMARY KEY,category text NOT NULL REFERENCES hotel_prices(category),status text NOT NULL DEFAULT 'Свободен' CHECK(status IN ('Свободен','Забронирован','Заселён','Уборка')));
+CREATE TABLE IF NOT EXISTS hotel_bookings(id text PRIMARY KEY,unit text NOT NULL REFERENCES hotel_units(id),category text NOT NULL,arrival date NOT NULL,departure date NOT NULL,guests integer NOT NULL CHECK(guests BETWEEN 1 AND 4),extras jsonb NOT NULL DEFAULT '[]',name text NOT NULL,phone text NOT NULL,email text NOT NULL,total integer NOT NULL,status text NOT NULL DEFAULT 'Ожидает подтверждения' CHECK(status IN ('Ожидает подтверждения','Подтверждено','Отменено')),cancel_hash text NOT NULL,created timestamptz NOT NULL DEFAULT now(),CHECK(departure>arrival));
+CREATE INDEX IF NOT EXISTS bookings_dates ON hotel_bookings(unit,arrival,departure);
+CREATE TABLE IF NOT EXISTS hotel_blocks(id uuid PRIMARY KEY,unit text NOT NULL REFERENCES hotel_units(id),date_from date NOT NULL,date_to date NOT NULL,CHECK(date_to>date_from));
+CREATE TABLE IF NOT EXISTS hotel_history(id bigserial PRIMARY KEY,at timestamptz NOT NULL DEFAULT now(),text text NOT NULL);
+CREATE TABLE IF NOT EXISTS rate_limits(key text NOT NULL,bucket bigint NOT NULL,count integer NOT NULL DEFAULT 1,PRIMARY KEY(key,bucket));
+INSERT INTO hotel_prices VALUES ('standard',4500),('comfort',6500),('deluxe',9500),('suite',14000) ON CONFLICT DO NOTHING;
+INSERT INTO hotel_units(id,category) VALUES ('101','standard'),('102','standard'),('103','standard'),('201','comfort'),('202','comfort'),('203','comfort'),('301','deluxe'),('302','deluxe'),('303','deluxe'),('401','suite'),('402','suite'),('403','suite') ON CONFLICT DO NOTHING;

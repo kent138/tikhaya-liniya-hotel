@@ -1,0 +1,4 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {availableUnits,overlaps,validateDates} from '../src/lib/store.js';
+test('availability excludes overlapping reservations, blocks and housekeeping',()=>{const s={units:[{id:'101',category:'standard',status:'Свободен'},{id:'102',category:'standard',status:'Уборка'},{id:'103',category:'standard',status:'Свободен'}],bookings:[{unit:'101',arrival:'2027-01-10',departure:'2027-01-13',status:'Подтверждено'}],blocks:[{unit:'103',from:'2027-01-11',to:'2027-01-12'}]};assert.equal(availableUnits(s,'standard','2027-01-11','2027-01-12').length,0);assert.equal(availableUnits(s,'standard','2027-01-13','2027-01-14').length,2);s.bookings[0].status='Отменено';assert.equal(availableUnits(s,'standard','2027-01-10','2027-01-11').length,2);assert.equal(overlaps('2027-01-10','2027-01-13','2027-01-13','2027-01-14'),false);assert.equal(validateDates('2027-02-30','2027-03-03'),false);});
